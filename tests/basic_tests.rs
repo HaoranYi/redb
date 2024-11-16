@@ -24,6 +24,16 @@ fn create_tempfile() -> tempfile::NamedTempFile {
 fn len() {
     let tmpfile = create_tempfile();
     let db = Database::create(tmpfile.path()).unwrap();
+
+    let write_txn = db.begin_write().unwrap();
+    {
+        let mut table = write_txn.open_table(STR_TABLE).unwrap();
+    }
+    write_txn.commit().unwrap();
+
+    let read_txn = db.begin_read().unwrap();
+    let table = read_txn.open_table(STR_TABLE).unwrap();
+
     let write_txn = db.begin_write().unwrap();
     {
         let mut table = write_txn.open_table(STR_TABLE).unwrap();
@@ -33,9 +43,9 @@ fn len() {
     }
     write_txn.commit().unwrap();
 
+    assert_eq!(table.len().unwrap(), 0); // read  old data before update!!!
+                                         // again 
     let read_txn = db.begin_read().unwrap();
-    let table = read_txn.open_table(STR_TABLE).unwrap();
-    assert_eq!(table.len().unwrap(), 3);
     let untyped_table = read_txn.open_untyped_table(STR_TABLE).unwrap();
     assert_eq!(untyped_table.len().unwrap(), 3);
 }
